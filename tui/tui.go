@@ -1,32 +1,36 @@
 package tui
 
 import (
+	db "echo/db/repository"
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // TODO: add athorization logic to routes
 // and implement the authorization toggling as a cmd that is returned from the chiled route that return a msg to indicate to the root model that it need to toggel the authorized status.
 type RootModel struct {
-	activeRoute route
-	currentMode mode
-	Routes      []tea.Model
-	authorized  bool
-	quiting     bool
+	activeRoute     route
+	currentMode     mode
+	Routes          []tea.Model
+	isAuthenticated bool
+	userRepo        db.UserRepository
+	quiting         bool
 }
 
-func InitialRootModel() RootModel {
+func InitialRootModel(userRepo db.UserRepository) RootModel {
 	return RootModel{
-		activeRoute: Auth,
-		currentMode: Nav,
-		Routes:      []tea.Model{InitialAuthModel(), InitChatModel()},
-		authorized:  false,
-		quiting:     false,
+		activeRoute:     Auth,
+		currentMode:     Nav,
+		Routes:          []tea.Model{InitialAuthModel(), InitChatModel()},
+		isAuthenticated: false,
+		userRepo:        userRepo,
+		quiting:         false,
 	}
 }
 
-// TODO: make it call the childs init and return there returned cmds as a batch => DONE
+// ? TODO: make it call the childs init and return there returned cmds as a batch => DONE
 func (m RootModel) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	for _, route := range m.Routes {
@@ -35,8 +39,8 @@ func (m RootModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// TODO: handel global keybindings in the root model update. => DONE
-// TODO: on windowsizemsg call all child updates and return there cmds as a batch => DONE
+// ? TODO: handel global keybindings in the root model update. => DONE
+// ? TODO: on windowsizemsg call all child updates and return there cmds as a batch => DONE
 func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd = nil
 	switch msg := msg.(type) {
@@ -51,16 +55,15 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 		return m, tea.Batch(cmds...)
 	case tea.KeyMsg:
-		switch msg.String() {
-		// ! remove this switching key binding
-		case "s":
-			m.activeRoute = (m.activeRoute + 1) % MaxRoute
-		case "q", "ctrl+c":
+		switch {
+		case key.Matches(msg, GlobalKeyMaps.Quit):
 			m.quiting = true
 			return m, tea.Quit
 		default:
 			m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
 		}
+	default:
+		m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
 	}
 	return m, cmd
 }

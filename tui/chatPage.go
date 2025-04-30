@@ -1,6 +1,7 @@
 package tui
 
 import (
+	db "echo/db/repository"
 	"echo/tui/styles"
 	"fmt"
 
@@ -8,7 +9,8 @@ import (
 )
 
 type ChatModel struct {
-	count int
+	currentUser db.User
+	count       int
 }
 
 func InitChatModel() ChatModel {

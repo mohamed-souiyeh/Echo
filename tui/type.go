@@ -15,15 +15,13 @@ const (
 	Ins
 )
 
-// String implements the fmt.Stringer interface for the mode type.
 func (m mode) String() string {
 	switch m {
 	case Nav:
-		return "Nav" // Return the string representation for Nav
+		return "Nav"
 	case Ins:
-		return "Ins" // Return the string representation for Ins
+		return "Ins"
 	default:
-		// Handle potential invalid values gracefully
 		return fmt.Sprintf("mode(%d)", m)
 	}
 }
@@ -36,10 +34,7 @@ const (
 	MaxRoute
 )
 
-// String implements the fmt.Stringer interface for the route type.
 func (r route) String() string {
-	// You can also use an array/slice lookup if values are contiguous
-	// and you handle bounds checks, but switch is often clearer.
 	switch r {
 	case Auth:
 		return "Auth"
@@ -48,7 +43,6 @@ func (r route) String() string {
 	case MaxRoute:
 		return "MaxRoute"
 	default:
-		// Handle potential invalid values
 		return fmt.Sprintf("route(%d)", r)
 	}
 }

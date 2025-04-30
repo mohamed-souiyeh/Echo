@@ -4,6 +4,8 @@ import (
 	"echo/app"
 
 	_ "embed"
+
+	"github.com/charmbracelet/log"
 )
 
 //go:embed banner.txt
@@ -24,6 +26,8 @@ type roomHubNotif struct {
 // }
 
 func main() {
+	log.SetLevel(log.DebugLevel)
+
 	a := app.NewApp()
 
 	a.Start()

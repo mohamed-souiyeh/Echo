@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"echo/tui"
 	"echo/tui/styles"
 	"errors"
@@ -11,7 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	echoDB "echo/db"
+	db "echo/db/repository"
+	repo "echo/db/repository"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
@@ -19,6 +25,7 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
 	"github.com/muesli/termenv"
+	_ "modernc.org/sqlite"
 )
 
 const (
@@ -28,6 +35,7 @@ const (
 
 type App struct {
 	*ssh.Server
+	db *sql.DB
 	// CentralHubReqChan chan clientHubReq
 	// RoomHubNotifChan chan roomHubNotif
 
@@ -53,10 +61,31 @@ func NewApp() *App {
 	return app
 }
 
+func (a *App) dbSetup() {
+	db, err := sql.Open("sqlite", "file:test.db")
+	if err != nil {
+		log.Fatalf("Failed to open sqlite db: %v", err)
+	}
+
+	echoDB.RunMigration(db)
+
+	log.Printf("Pinging database...")
+	if err := db.Ping(); err != nil {
+		log.Fatalf("❌ Failed to ping database: %v", err)
+	}
+	log.Printf("✅ Database connection successful.")
+
+	userRepo := repo.NewSQLiteUserRepository(db)
+	echoDB.RunUserSeed(context.Background(), userRepo)
+}
+
 // this function is responsible of starting and handling shutting down the server
 // gracefully after recieving interuption signal or crashing, what ever
 // the case it will help do the nassisay clean up.
 func (a *App) Start() {
+
+	a.dbSetup()
+
 	var err error
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -88,7 +117,10 @@ func (a *App) echoMiddleware() wish.Middleware {
 
 		styles.ClientRenderer = bubbletea.MakeRenderer(s)
 
-		m := tui.InitialRootModel()
+		styles.ClientRenderer.SetHasDarkBackground(false)
+		lipgloss.SetHasDarkBackground(false)
+
+		m := tui.InitialRootModel(db.NewSQLiteUserRepository(a.db))
 
 		return tea.NewProgram(m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}
