@@ -13,11 +13,9 @@ import (
 	"time"
 
 	echoDB "echo/db"
-	db "echo/db/repository"
 	repo "echo/db/repository"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
@@ -62,7 +60,7 @@ func NewApp() *App {
 }
 
 func (a *App) dbSetup() {
-	db, err := sql.Open("sqlite", "file:test.db")
+	db, err := sql.Open("sqlite", "file:echo.db")
 	if err != nil {
 		log.Fatalf("Failed to open sqlite db: %v", err)
 	}
@@ -117,10 +115,7 @@ func (a *App) echoMiddleware() wish.Middleware {
 
 		styles.ClientRenderer = bubbletea.MakeRenderer(s)
 
-		styles.ClientRenderer.SetHasDarkBackground(false)
-		lipgloss.SetHasDarkBackground(false)
-
-		m := tui.InitialRootModel(db.NewSQLiteUserRepository(a.db))
+		m := tui.InitialRootModel(repo.NewSQLiteUserRepository(a.db))
 
 		return tea.NewProgram(m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}

@@ -2,6 +2,7 @@ package tui
 
 import (
 	db "echo/db/repository"
+	"echo/tui/keymaps"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -56,7 +57,7 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, GlobalKeyMaps.Quit):
+		case key.Matches(msg, keymaps.GlobalKeyMaps.Quit):
 			m.quiting = true
 			return m, tea.Quit
 		default:
