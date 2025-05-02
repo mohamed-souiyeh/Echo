@@ -2,7 +2,9 @@ package tui
 
 import (
 	db "echo/db/repository"
+	"echo/services"
 	"echo/tui/keymaps"
+	"echo/tui/messages"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -16,7 +18,7 @@ type RootModel struct {
 	currentMode     mode
 	Routes          []tea.Model
 	isAuthenticated bool
-	userRepo        db.UserRepository
+	userService     *services.UserService
 	quiting         bool
 }
 
@@ -26,7 +28,7 @@ func InitialRootModel(userRepo db.UserRepository) RootModel {
 		currentMode:     Nav,
 		Routes:          []tea.Model{InitialAuthModel(), InitChatModel()},
 		isAuthenticated: false,
-		userRepo:        userRepo,
+		userService:     services.NewUserService(userRepo),
 		quiting:         false,
 	}
 }
@@ -55,6 +57,38 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Println("window size event")
 		})
 		return m, tea.Batch(cmds...)
+	case messages.SignUpAttemptMsg:
+		cmd := m.signUp(msg.Username, msg.Password)
+		return m, cmd
+	case messages.SignInAttemptMsg:
+		cmd := m.signIn(msg.Username, msg.Password)
+		return m, cmd
+	case messages.AuthFailedMsg:
+		if m.activeRoute == Auth {
+			m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
+		}
+		return m, cmd
+	case messages.AuthSuccessMsg:
+		if m.activeRoute == Auth {
+			m.isAuthenticated = true
+			m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
+		}
+		return m, cmd
+	case messages.AccessChatMsg:
+		if m.isAuthenticated {
+			m.activeRoute = Chat
+			keymaps.AuthKeyMaps.Deactivate()
+			keymaps.ChatKeyMaps.Activate()
+			m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
+		}
+		return m, cmd
+	case messages.LogoutMsg:
+		m.isAuthenticated = false
+		m.activeRoute = Auth
+		keymaps.ChatKeyMaps.Deactivate()
+		keymaps.AuthKeyMaps.Activate()
+		m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
+		return m, cmd
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keymaps.GlobalKeyMaps.Quit):
@@ -62,11 +96,45 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		default:
 			m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
+			return m, cmd
 		}
 	default:
 		m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
+		return m, cmd
 	}
-	return m, cmd
+}
+
+func (m RootModel) signUp(username string, password string) tea.Cmd {
+	return func() tea.Msg {
+
+		if len(username) < 1 {
+			return messages.AuthFailedMsg{
+				Reason:      "You can't be nameless, put a username already -_-",
+				DebugReason: "username too short",
+			}
+		}
+		if len(password) < 6 {
+			return messages.AuthFailedMsg{
+				Reason:      "Size does matter in passwords, it need to be at least 13 characters long",
+				DebugReason: "password too short",
+			}
+		}
+
+		return m.userService.SignUp(username, password)
+	}
+}
+
+func (m RootModel) signIn(username, password string) tea.Cmd {
+	return func() tea.Msg {
+
+		if len(username) < 1 || len(password) < 1 {
+			return messages.AuthFailedMsg{
+				Reason: "You aren't expecting to get access without crediantials, are u?",
+			}
+		}
+
+		return m.userService.SignIn(username, password)
+	}
 }
 
 func (m RootModel) View() string {

@@ -75,6 +75,8 @@ func (a *App) dbSetup() {
 
 	userRepo := repo.NewSQLiteUserRepository(db)
 	echoDB.RunUserSeed(context.Background(), userRepo)
+
+	a.db = db
 }
 
 // this function is responsible of starting and handling shutting down the server

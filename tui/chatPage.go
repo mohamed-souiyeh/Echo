@@ -2,19 +2,27 @@ package tui
 
 import (
 	db "echo/db/repository"
-	"echo/tui/styles"
+	"echo/tui/commands"
+	"echo/tui/keymaps"
+	"echo/tui/messages"
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ChatModel struct {
-	currentUser db.User
-	count       int
+	width       int
+	height      int
+	CurrentUser db.User
+	help        help.Model
 }
 
 func InitChatModel() ChatModel {
-	return ChatModel{}
+	return ChatModel{
+		help: help.New(),
+	}
 }
 
 func (m ChatModel) Init() tea.Cmd {
@@ -24,26 +32,23 @@ func (m ChatModel) Init() tea.Cmd {
 func (m ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	// Handle Window Size Changes
-	// case tea.WindowSizeMsg:
-	// 	mc.width = msg.Width   // Update the width
-	// 	mc.height = msg.Height // Update the height
+	case tea.WindowSizeMsg:
+		m.width = msg.Width   // Update the width
+		m.height = msg.Height // Update the height
+		m.help.Width = msg.Width
+	case messages.AccessChatMsg:
+		m.CurrentUser = msg.User
+		return m, nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "k":
-			m.count++
-			return m, nil
-		case "j":
-			m.count--
-			return m, nil
+		switch {
+		case key.Matches(msg, keymaps.ChatKeyMaps.Logout):
+			return m, commands.LogoutCmd(m.CurrentUser.Username)
 		}
 	}
 	return m, nil
 }
 
 func (m ChatModel) View() string {
-	debug.print(func() {
-		fmt.Println("we are return the chat view")
-	})
-	help := styles.HelpBar.Render("?:Toggle Help • ⏎: submit • ctrl+c: quit")
-	return fmt.Sprintf("chat count is => %d", m.count) + "\n" + help
+	help := m.help.View(keymaps.ChatKeyMaps)
+	return fmt.Sprintf("chat current user is => %s", m.CurrentUser.Username) + "\n" + help
 }

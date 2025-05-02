@@ -41,7 +41,6 @@ func (m AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width   // Update the width
 		m.height = msg.Height // Update the height
 		m.help.Width = msg.Width
-		return m, nil
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keymaps.AuthKeyMaps.Help):
@@ -62,8 +61,8 @@ func (m AuthModel) View() string {
 	// build your auth page body as before
 	header := lipgloss.JoinVertical(
 		lipgloss.Center,
-		styles.Title.Render(" welcome to Echo "),
-		styles.Subtitle.Render(" a small chat application served over ssh \n"),
+		styles.Title.Width(m.width).Align(lipgloss.Center).Render(" welcome to Echo "),
+		styles.Subtitle.Width(m.width).Align(lipgloss.Center).Render(" a small chat application served over ssh \n"),
 		styles.Subtitle.Render(m.authForum.AuthMode.String()+"\n"),
 	)
 

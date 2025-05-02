@@ -22,9 +22,9 @@ var GlobalKeyMaps = GlobalKeyMap{
 type AuthKeyMap struct {
 	GlobalKeyMap
 	AuthMode key.Binding
-	Submit key.Binding
-	Up     key.Binding
-	Down   key.Binding
+	Submit   key.Binding
+	Up       key.Binding
+	Down     key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
@@ -41,6 +41,20 @@ func (k AuthKeyMap) FullHelp() [][]key.Binding {
 		{k.Quit, k.AuthMode}, // second column
 		{k.Up, k.Down},
 	}
+}
+
+func (k AuthKeyMap) Deactivate() {
+	k.AuthMode.SetEnabled(false)
+	k.Submit.SetEnabled(false)
+	k.Up.SetEnabled(false)
+	k.Down.SetEnabled(false)
+}
+
+func (k AuthKeyMap) Activate() {
+	k.AuthMode.SetEnabled(true)
+	k.Submit.SetEnabled(true)
+	k.Up.SetEnabled(true)
+	k.Down.SetEnabled(true)
 }
 
 var AuthKeyMaps = AuthKeyMap{
@@ -60,5 +74,43 @@ var AuthKeyMaps = AuthKeyMap{
 	Down: key.NewBinding(
 		key.WithKeys("down", "tab"),
 		key.WithHelp("↓", "mode down"),
+	),
+}
+
+type ChatKeyMap struct {
+	GlobalKeyMap
+	Logout key.Binding
+	// Submit key.Binding
+	// Up     key.Binding
+	// Down   key.Binding
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view. It's part
+// of the key.Map interface.
+func (k ChatKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Help, k.Quit, k.Logout}
+}
+
+// FullHelp returns keybindings for the expanded help view. It's part of the
+// key.Map interface.
+func (k ChatKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Help, k.Quit, k.Logout},
+	}
+}
+
+func (k ChatKeyMap) Deactivate() {
+	k.Logout.SetEnabled(false)
+}
+
+func (k ChatKeyMap) Activate() {
+	k.Logout.SetEnabled(true)
+}
+
+var ChatKeyMaps = ChatKeyMap{
+	GlobalKeyMap: GlobalKeyMaps,
+	Logout: key.NewBinding(
+		key.WithKeys("ctrl+o"),
+		key.WithHelp("ctrl+o", "Logout"),
 	),
 }

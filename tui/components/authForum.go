@@ -1,7 +1,9 @@
 package components
 
 import (
+	"echo/tui/commands"
 	"echo/tui/keymaps"
+	"echo/tui/messages"
 	"echo/tui/styles"
 	"fmt"
 	"strings"
@@ -14,11 +16,15 @@ import (
 )
 
 type AuthForumModel struct {
-	focusIndex int
-	inputs     []textinput.Model
-	isLoading  bool
-	spinner    spinner.Model
-	AuthMode   AuthMode
+	width        int
+	height       int
+	focusIndex   int
+	inputs       []textinput.Model
+	isLoading    bool
+	AuthMode     AuthMode
+	spinner      spinner.Model
+	responseMsg  string
+	showResponse bool
 }
 
 func InitialAuthForumModel() AuthForumModel {
@@ -28,11 +34,13 @@ func InitialAuthForumModel() AuthForumModel {
 	spin.Spinner = styles.EchoSpinner
 
 	m := AuthForumModel{
-		focusIndex: -1,
-		inputs:     make([]textinput.Model, 2),
-		AuthMode:   SignUp,
-		isLoading:  false,
-		spinner:    spin,
+		focusIndex:   -1,
+		inputs:       make([]textinput.Model, 2),
+		isLoading:    false,
+		AuthMode:     SignUp,
+		spinner:      spin,
+		responseMsg:  "",
+		showResponse: false,
 	}
 
 	var t textinput.Model
@@ -71,6 +79,10 @@ func (m AuthForumModel) Init() tea.Cmd {
 
 func (m AuthForumModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width   // Update the width
+		m.height = msg.Height // Update the height
+		return m, nil
 	case spinner.TickMsg:
 		if m.isLoading {
 			spinner, cmd := m.spinner.Update(msg)
@@ -78,6 +90,29 @@ func (m AuthForumModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.spinner = spinner
 			return m, cmd
 		}
+	case messages.AuthFailedMsg:
+		m.isLoading = false
+		m.showResponse = true
+		m.responseMsg = msg.Reason
+		return m, nil
+	case messages.AuthSuccessMsg:
+		m.inputs[0].Reset()
+		m.inputs[1].Reset()
+		m.isLoading = false
+		m.showResponse = false
+		m.responseMsg = ""
+		m.focusIndex = 0
+		return m, commands.AccessChatCmd(msg.User)
+	case messages.LogoutMsg:
+		var cmd tea.Cmd = nil
+
+		m.showResponse = true
+		m.responseMsg = "See you soon ^_^ " + msg.Username
+		m.focusIndex = 0 // i know, i am assigning here just out of paranoia, maybe a bad reason but i will keep it for now.
+		cmd = m.inputs[m.focusIndex].Focus()
+		m.inputs[m.focusIndex].PromptStyle = styles.FocusedStyle
+		m.inputs[m.focusIndex].TextStyle = styles.FocusedStyle
+		return m, tea.Batch(textinput.Blink, cmd)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keymaps.AuthKeyMaps.AuthMode):
@@ -112,9 +147,26 @@ func (m AuthForumModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, cmd
 		case key.Matches(msg, keymaps.AuthKeyMaps.Submit):
-			// TODO instead of handling submit in the auth model handle it in the authform model and send launch a cmd from the authForm model to send a msg indicating to the auth model to start the spinner
-			m.isLoading = !m.isLoading //! this is not the actual logic for authenticating
-			return m, m.spinner.Tick
+			m.isLoading = true
+			m.showResponse = false
+			var cmds []tea.Cmd
+
+			if m.focusIndex < len(m.inputs) && m.focusIndex >= 0 {
+				m.inputs[m.focusIndex].Blur()
+				m.inputs[m.focusIndex].PromptStyle = styles.NoStyle
+				m.inputs[m.focusIndex].TextStyle = styles.NoStyle
+			}
+
+			m.focusIndex = len(m.inputs)
+			cmds = append(cmds, m.spinner.Tick)
+
+			if m.AuthMode == SignUp {
+				cmds = append(cmds, commands.SignUpAttemptCmd(m.inputs[0].Value(), m.inputs[1].Value()))
+			} else if m.AuthMode == SignIn {
+				cmds = append(cmds, commands.SignInAttemptCmd(m.inputs[0].Value(), m.inputs[1].Value()))
+			}
+
+			return m, tea.Batch(cmds...)
 		}
 	}
 
@@ -155,7 +207,9 @@ func (m AuthForumModel) View() string {
 	spinner := ""
 
 	if m.isLoading {
-		spinner = m.spinner.View() + "accessing Echo"
+		spinner = styles.Subtitle.Width(m.width).Align(lipgloss.Center).Render(m.spinner.View() + "accessing Echo")
+	} else if m.showResponse {
+		spinner = styles.Subtitle.Width(m.width).Align(lipgloss.Center).Render(m.responseMsg)
 	}
 
 	forum := lipgloss.JoinVertical(
