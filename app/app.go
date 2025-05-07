@@ -6,6 +6,7 @@ import (
 	"echo/tui"
 	"echo/tui/styles"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -22,8 +23,9 @@ import (
 	"github.com/charmbracelet/wish/activeterm"
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/muesli/termenv"
-	_ "modernc.org/sqlite"
 )
 
 const (
@@ -41,6 +43,12 @@ type App struct {
 }
 
 func NewApp() *App {
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading .env file, relying on environment variables", "error", err)
+	}
+
 	app := new(App)
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
@@ -60,21 +68,56 @@ func NewApp() *App {
 }
 
 func (a *App) dbSetup() {
-	db, err := sql.Open("sqlite", "file:echo.db")
+	// Construct DSN from environment variables
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbSSLMode := os.Getenv("DB_SSLMODE")
+
+	// Basic validation
+	if dbHost == "" || dbPort == "" || dbUser == "" || dbPassword == "" || dbName == "" {
+		log.Fatal("Database configuration environment variables are not fully set.")
+	}
+	if dbSSLMode == "" {
+		dbSSLMode = "disable"
+		log.Warn("DB_SSLMODE not set, defaulting to 'disable'. Ensure this is secure for production.")
+	}
+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		dbHost, dbPort, dbUser, dbPassword, dbName, dbSSLMode)
+
+	// Or using the postgres:// URL format if preferred by pgx/stdlib
+	// dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+	// 	dbUser, dbPassword, dbHost, dbPort, dbName, dbSSLMode)
+
+	log.Info("Connecting to PostgreSQL database...")
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		log.Fatalf("Failed to open sqlite db: %v", err)
+		log.Fatalf("Failed to open PostgreSQL database: %v", err)
 	}
 
-	echoDB.RunMigration(db)
+	// Configure connection pool
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(15)
+	db.SetConnMaxLifetime(30 * time.Minute)
+	db.SetConnMaxIdleTime(30 * time.Minute)
 
-	log.Printf("Pinging database...")
-	if err := db.Ping(); err != nil {
-		log.Fatalf("❌ Failed to ping database: %v", err)
+	log.Info("Pinging database...")
+	// Ping with context for timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		log.Fatalf("❌ Failed to ping PostgreSQL database: %v", err)
 	}
-	log.Printf("✅ Database connection successful.")
+	log.Info("✅ PostgreSQL Database connection successful.")
 
-	userRepo := repo.NewSQLiteUserRepository(db)
-	echoDB.RunUserSeed(context.Background(), userRepo)
+	// Run migrations (pass the DSN for migrate to use if needed, or the db instance)
+	echoDB.RunMigration(db) // Pass DSN if your RunMigration needs it for NewWithDatabaseInstance
+
+	userRepo := repo.NewPostgresUserRepository(db) // Placeholder for now
+	echoDB.RunUserSeed(context.Background(), userRepo) // Seeding will also need review
 
 	a.db = db
 }
@@ -117,7 +160,7 @@ func (a *App) echoMiddleware() wish.Middleware {
 
 		styles.ClientRenderer = bubbletea.MakeRenderer(s)
 
-		m := tui.InitialRootModel(repo.NewSQLiteUserRepository(a.db))
+		m := tui.InitialRootModel(repo.NewPostgresUserRepository(a.db))
 
 		return tea.NewProgram(m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}

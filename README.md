@@ -1,6 +1,6 @@
 # Echo
 
-Simple terminal chat application served via SSH - which means u only need a terminal and an ssh client to start using it!
+Simple terminal chat application served via SSH (probably over engineered for it's scale) - which means u only need a terminal and an ssh client to start using it!
 
 
 ## ⚠️ Status: Work In Progress ⚠️

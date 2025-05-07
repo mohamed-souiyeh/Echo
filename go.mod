@@ -10,7 +10,10 @@ require (
 	github.com/charmbracelet/ssh v0.0.0-20250213143314-8712ec3ff3ef
 	github.com/charmbracelet/wish v1.4.7
 	github.com/golang-migrate/migrate/v4 v4.18.3
+	github.com/jackc/pgx/v5 v5.5.4
+	github.com/joho/godotenv v1.5.1
 	github.com/muesli/termenv v0.16.0
+	golang.org/x/crypto v0.37.0
 	modernc.org/sqlite v1.37.0
 )
 
@@ -35,6 +38,10 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
@@ -46,7 +53,6 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect

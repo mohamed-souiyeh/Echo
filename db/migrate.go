@@ -8,10 +8,10 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
-	_ "modernc.org/sqlite"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 //go:embed migrations
@@ -31,16 +31,15 @@ func RunMigration(db *sql.DB) {
 		}
 	}()
 
-	targetInstance, err := sqlite.WithInstance(db, new(sqlite.Config))
+	targetInstance, err := postgres.WithInstance(db, new(postgres.Config))
 	if err != nil {
-		log.Fatalf("Failed to create sqlite database instance for migrate: %v", err)
+		log.Fatalf("Failed to create postgres database instance for migrate: %v", err)
 	}
 
-	m, err := migrate.NewWithInstance("httpfs", sourceInstance, "sqlite", targetInstance)
+	m, err := migrate.NewWithInstance("httpfs", sourceInstance, "postgres", targetInstance)
 	if err != nil {
 		log.Fatalf("Failed to create migrate instance: %v", err)
 	}
-
 
 	// --- Run Migrations ---
 	// Choose ONE of the following migration commands:

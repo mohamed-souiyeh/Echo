@@ -19,21 +19,21 @@ type UserRepository interface {
 	// SearchUsersByUsername(ctx, username) // Read - implement it using the LIKE keyword in the query.
 }
 
-type SQLiteUserRepository struct {
+type PostgresUserRepository struct {
 	db      *sql.DB
 	queries *sqlc.Queries
 }
 
-func NewSQLiteUserRepository(db *sql.DB) *SQLiteUserRepository {
-	return &SQLiteUserRepository{
+func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository {
+	return &PostgresUserRepository{
 		db:      db,
 		queries: sqlc.New(db),
 	}
 }
 
-var _ UserRepository = (*SQLiteUserRepository)(nil)
+var _ UserRepository = (*PostgresUserRepository)(nil)
 
-func (r *SQLiteUserRepository) CreateUser(ctx context.Context, username string, hashedPassword string) (sqlc.User, error) {
+func (r *PostgresUserRepository) CreateUser(ctx context.Context, username string, hashedPassword string) (sqlc.User, error) {
 
 	log.Debugf("repo db: %p, repo queries: %p", r.db, r.queries)
 
@@ -49,7 +49,7 @@ func (r *SQLiteUserRepository) CreateUser(ctx context.Context, username string, 
 	return user, nil
 }
 
-func (r *SQLiteUserRepository) GetUserByUsername(ctx context.Context, username string) (sqlc.User, error) {
+func (r *PostgresUserRepository) GetUserByUsername(ctx context.Context, username string) (sqlc.User, error) {
 	user, err := r.queries.GetUserByUsername(ctx, username)
 
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *SQLiteUserRepository) GetUserByUsername(ctx context.Context, username s
 	return user, nil
 }
 
-func (r *SQLiteUserRepository) GetAllUsers(ctx context.Context) ([]sqlc.User, error) {
+func (r *PostgresUserRepository) GetAllUsers(ctx context.Context) ([]sqlc.User, error) {
 	users, err := r.queries.GetAllUsers(ctx)
 
 	if err != nil {

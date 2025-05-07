@@ -11,7 +11,7 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO "users" ("username", "password") 
-VALUES (?, ?) 
+VALUES ($1, $2) 
 returning id, username, password, created_at
 `
 
@@ -66,7 +66,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT id, username, password, created_at FROM "users" 
-WHERE "username" = ?
+WHERE "username" = $1
 LIMIT 1
 `
 

@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	db "echo/db/repository"
 	"echo/tui/messages"
+	"errors"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
-	"modernc.org/sqlite"
-	sqlite3 "modernc.org/sqlite/lib"
 )
 
 var hashingCost int = 13
@@ -29,9 +29,9 @@ func (us UserService) SignIn(username, password string) tea.Msg {
 	user, err := us.userRepo.GetUserByUsername(context.Background(), username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return messages.AuthFailedMsg{
-				Reason: "We don't know u yet :/, Sign-Up to fix that",
+				Reason:      "We don't know u yet :/, Sign-Up to fix that",
 				DebugReason: "database error: " + err.Error(),
 			}
 		}
@@ -46,7 +46,7 @@ func (us UserService) SignIn(username, password string) tea.Msg {
 
 	if err != nil {
 		return messages.AuthFailedMsg{
-			Reason: "Wrong username or password",
+			Reason:      "Wrong username or password",
 			DebugReason: "password verification failed for some reason: " + err.Error(),
 		}
 	}
@@ -70,13 +70,14 @@ func (us UserService) SignUp(username string, password string) tea.Msg {
 
 	if err != nil {
 
-		sqliteErr, ok := err.(*sqlite.Error)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			// PostgreSQL error code for unique_violation is "23505"
+			if pgErr.Code == "23505" {
 
-		if ok {
-			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 				return messages.AuthFailedMsg{
-					Reason:      "Username already taken unfortunatly :/, or Sign-In if u already have an account",
-					DebugReason: "database error: " + err.Error(),
+					Reason:      "Username already taken unfortunately :/, or Sign-In if u already have an account",
+					DebugReason: "database error (unique constraint violation): " + err.Error(),
 				}
 			}
 		}
