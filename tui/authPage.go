@@ -36,10 +36,9 @@ func (m AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// var cmds []tea.Cmd = nil
 	var cmd tea.Cmd = nil
 	switch msg := msg.(type) {
-	// Handle Window Size Changes
 	case tea.WindowSizeMsg:
-		m.width = msg.Width   // Update the width
-		m.height = msg.Height // Update the height
+		m.width = msg.Width
+		m.height = msg.Height
 		m.help.Width = msg.Width
 	case tea.KeyMsg:
 		switch {
@@ -48,7 +47,6 @@ func (m AuthModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	}
-	// add the forum update function here to handle text input, cursor blinking and authentication logic launching
 	updatedAuthForum, cmd := m.authForum.Update(msg)
 
 	m.authForum = updatedAuthForum.(comps.AuthForumModel)

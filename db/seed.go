@@ -9,7 +9,6 @@ import (
 	repo "echo/db/repository"
 )
 
-// TODO: maybe make the seed generate random data and use an argumen tas the amount to generate
 func RunUserSeed(ctx context.Context, repo repo.UserRepository) error {
 	log.Info("Attempting to seed users...")
 

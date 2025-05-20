@@ -33,8 +33,9 @@ func (m ChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	// Handle Window Size Changes
 	case tea.WindowSizeMsg:
-		m.width = msg.Width   // Update the width
-		m.height = msg.Height // Update the height
+		m.width = msg.Width
+		m.height = msg.Height
+
 		m.help.Width = msg.Width
 	case messages.AccessChatMsg:
 		m.CurrentUser = msg.User

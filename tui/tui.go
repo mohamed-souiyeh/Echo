@@ -11,8 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// TODO: add athorization logic to routes
-// and implement the authorization toggling as a cmd that is returned from the chiled route that return a msg to indicate to the root model that it need to toggel the authorized status.
 type RootModel struct {
 	activeRoute     route
 	currentMode     mode
@@ -33,7 +31,6 @@ func InitialRootModel(userRepo db.UserRepository) RootModel {
 	}
 }
 
-// ? TODO: make it call the childs init and return there returned cmds as a batch => DONE
 func (m RootModel) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	for _, route := range m.Routes {
@@ -42,8 +39,6 @@ func (m RootModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// ? TODO: handel global keybindings in the root model update. => DONE
-// ? TODO: on windowsizemsg call all child updates and return there cmds as a batch => DONE
 func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd = nil
 	switch msg := msg.(type) {

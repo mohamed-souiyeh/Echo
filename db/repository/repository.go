@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-// TODO: create an interface to make testability easy
 type UserRepository interface {
 	GetAllUsers(ctx context.Context) ([]sqlc.User, error) // for testing and debuging
 

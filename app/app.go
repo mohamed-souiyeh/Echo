@@ -68,7 +68,6 @@ func NewApp() *App {
 }
 
 func (a *App) dbSetup() {
-	// Construct DSN from environment variables
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbUser := os.Getenv("DB_USER")
@@ -76,7 +75,6 @@ func (a *App) dbSetup() {
 	dbName := os.Getenv("DB_NAME")
 	dbSSLMode := os.Getenv("DB_SSLMODE")
 
-	// Basic validation
 	if dbHost == "" || dbPort == "" || dbUser == "" || dbPassword == "" || dbName == "" {
 		log.Fatal("Database configuration environment variables are not fully set.")
 	}
@@ -87,10 +85,6 @@ func (a *App) dbSetup() {
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		dbHost, dbPort, dbUser, dbPassword, dbName, dbSSLMode)
-
-	// Or using the postgres:// URL format if preferred by pgx/stdlib
-	// dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-	// 	dbUser, dbPassword, dbHost, dbPort, dbName, dbSSLMode)
 
 	log.Info("Connecting to PostgreSQL database...")
 	db, err := sql.Open("pgx", dsn)
@@ -105,7 +99,6 @@ func (a *App) dbSetup() {
 	db.SetConnMaxIdleTime(30 * time.Minute)
 
 	log.Info("Pinging database...")
-	// Ping with context for timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
@@ -113,8 +106,7 @@ func (a *App) dbSetup() {
 	}
 	log.Info("✅ PostgreSQL Database connection successful.")
 
-	// Run migrations (pass the DSN for migrate to use if needed, or the db instance)
-	echoDB.RunMigration(db) // Pass DSN if your RunMigration needs it for NewWithDatabaseInstance
+	echoDB.RunMigration(db)
 
 	userRepo := repo.NewPostgresUserRepository(db) // Placeholder for now
 	echoDB.RunUserSeed(context.Background(), userRepo) // Seeding will also need review
@@ -152,12 +144,6 @@ func (a *App) Start() {
 func (a *App) echoMiddleware() wish.Middleware {
 
 	teaHandler := func(s ssh.Session) *tea.Program {
-		// pty, _, active := s.Pty()
-		// if !active {
-		// 	wish.Fatalln(s, "no active terminal, skipping")
-		// 	return nil
-		// }
-
 		styles.ClientRenderer = bubbletea.MakeRenderer(s)
 
 		m := tui.InitialRootModel(repo.NewPostgresUserRepository(a.db))
