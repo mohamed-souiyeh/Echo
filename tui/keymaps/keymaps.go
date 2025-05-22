@@ -79,7 +79,8 @@ var AuthKeyMaps = AuthKeyMap{
 type ChatKeyMap struct {
 	GlobalKeyMap
 	Logout key.Binding
-	// Submit key.Binding
+	Esc    key.Binding
+	Submit key.Binding
 	// Up     key.Binding
 	// Down   key.Binding
 }
@@ -87,23 +88,29 @@ type ChatKeyMap struct {
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
 // of the key.Map interface.
 func (k ChatKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit, k.Logout}
+	return []key.Binding{k.Help, k.Quit, k.Logout, k.Esc}
 }
 
 // FullHelp returns keybindings for the expanded help view. It's part of the
 // key.Map interface.
 func (k ChatKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Help, k.Quit, k.Logout},
+		{k.Help, k.Submit},
+		{k.Quit, k.Esc},
+		{k.Logout},
 	}
 }
 
 func (k ChatKeyMap) Deactivate() {
 	k.Logout.SetEnabled(false)
+	k.Esc.SetEnabled(false)
+	k.Submit.SetEnabled(false)
 }
 
 func (k ChatKeyMap) Activate() {
 	k.Logout.SetEnabled(true)
+	k.Esc.SetEnabled(true)
+	k.Submit.SetEnabled(true)
 }
 
 var ChatKeyMaps = ChatKeyMap{
@@ -111,5 +118,13 @@ var ChatKeyMaps = ChatKeyMap{
 	Logout: key.NewBinding(
 		key.WithKeys("ctrl+o"),
 		key.WithHelp("ctrl+o", "Logout"),
+	),
+	Esc: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "Toggel Focus"),
+	),
+	Submit: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("⏎", "Send Msg"),
 	),
 }

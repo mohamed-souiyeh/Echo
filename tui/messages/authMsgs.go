@@ -3,8 +3,8 @@ package messages
 import db "echo/db/sqlc_generated"
 
 type SignUpAttemptMsg struct {
-	Username string
-	Password string
+	Username  string
+	Passwords []string
 }
 
 type SignInAttemptMsg struct {

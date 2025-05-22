@@ -37,6 +37,8 @@ var (
 
 	NoStyle = ClientRenderer.NewStyle()
 
+	SenderStyle = ClientRenderer.NewStyle().Foreground(lipgloss.Color("5"))
+
 	// authForm
 	FocusedStyle = ClientRenderer.NewStyle().Foreground(lipgloss.Color("205"))
 	BlurredStyle = ClientRenderer.NewStyle().Foreground(lipgloss.Color("240"))

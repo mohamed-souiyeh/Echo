@@ -20,6 +20,7 @@ type AuthForumModel struct {
 	height       int
 	focusIndex   int
 	inputs       []textinput.Model
+	inputsLen    int
 	isLoading    bool
 	AuthMode     AuthMode
 	spinner      spinner.Model
@@ -35,7 +36,8 @@ func InitialAuthForumModel() AuthForumModel {
 
 	m := AuthForumModel{
 		focusIndex:   -1,
-		inputs:       make([]textinput.Model, 2),
+		inputs:       make([]textinput.Model, 3),
+		inputsLen:    3,
 		isLoading:    false,
 		AuthMode:     SignUp,
 		spinner:      spin,
@@ -56,6 +58,10 @@ func InitialAuthForumModel() AuthForumModel {
 			t.Placeholder = "Username"
 		case 1:
 			t.Placeholder = "Password"
+			t.EchoMode = textinput.EchoPassword
+			t.EchoCharacter = '•'
+		case 2:
+			t.Placeholder = "Confirm Password"
 			t.EchoMode = textinput.EchoPassword
 			t.EchoCharacter = '•'
 		}
@@ -117,10 +123,11 @@ func (m AuthForumModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, keymaps.AuthKeyMaps.AuthMode):
 			m.AuthMode = (m.AuthMode + 1) % MaxMode
+			m.inputsLen = 3 - int(m.AuthMode)
 			return m, nil
 		case key.Matches(msg, keymaps.AuthKeyMaps.Down, keymaps.AuthKeyMaps.Up):
 
-			if m.focusIndex < len(m.inputs) && m.focusIndex >= 0 {
+			if m.focusIndex < m.inputsLen && m.focusIndex >= 0 {
 				m.inputs[m.focusIndex].Blur()
 				m.inputs[m.focusIndex].PromptStyle = styles.NoStyle
 				m.inputs[m.focusIndex].TextStyle = styles.NoStyle
@@ -132,14 +139,14 @@ func (m AuthForumModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focusIndex++
 			}
 
-			if m.focusIndex > len(m.inputs) {
+			if m.focusIndex > m.inputsLen {
 				m.focusIndex = 0
 			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.inputs)
+				m.focusIndex = m.inputsLen
 			}
 
 			var cmd tea.Cmd
-			if m.focusIndex < len(m.inputs) && m.focusIndex >= 0 {
+			if m.focusIndex < m.inputsLen && m.focusIndex >= 0 {
 				cmd = m.inputs[m.focusIndex].Focus()
 				m.inputs[m.focusIndex].PromptStyle = styles.FocusedStyle
 				m.inputs[m.focusIndex].TextStyle = styles.FocusedStyle
@@ -151,17 +158,18 @@ func (m AuthForumModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showResponse = false
 			var cmds []tea.Cmd
 
-			if m.focusIndex < len(m.inputs) && m.focusIndex >= 0 {
+			if m.focusIndex < m.inputsLen && m.focusIndex >= 0 {
 				m.inputs[m.focusIndex].Blur()
 				m.inputs[m.focusIndex].PromptStyle = styles.NoStyle
 				m.inputs[m.focusIndex].TextStyle = styles.NoStyle
 			}
 
-			m.focusIndex = len(m.inputs)
+			m.focusIndex = m.inputsLen
 			cmds = append(cmds, m.spinner.Tick)
 
 			if m.AuthMode == SignUp {
-				cmds = append(cmds, commands.SignUpAttemptCmd(m.inputs[0].Value(), m.inputs[1].Value()))
+
+				cmds = append(cmds, commands.SignUpAttemptCmd(m.inputs[0].Value(), []string{m.inputs[1].Value(), m.inputs[2].Value()}))
 			} else if m.AuthMode == SignIn {
 				cmds = append(cmds, commands.SignInAttemptCmd(m.inputs[0].Value(), m.inputs[1].Value()))
 			}
@@ -190,15 +198,15 @@ func (m *AuthForumModel) updateInputs(msg tea.Msg) tea.Cmd {
 func (m AuthForumModel) View() string {
 	var b strings.Builder
 
-	for i := 0; i < len(m.inputs); i++ {
+	for i := 0; i < m.inputsLen; i++ {
 		b.WriteString(styles.Input.Render(m.inputs[i].View()))
-		if i < len(m.inputs)-1 {
+		if i < m.inputsLen-1 {
 			b.WriteRune('\n')
 		}
 	}
 
 	button := &styles.AuthFormBlurredButton
-	if m.focusIndex == len(m.inputs) {
+	if m.focusIndex == m.inputsLen {
 		button = &styles.AuthFormFocusedButton
 	}
 

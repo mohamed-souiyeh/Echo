@@ -8,11 +8,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func SignUpAttemptCmd(username string, password string) tea.Cmd {
+func SignUpAttemptCmd(username string, passwords []string) tea.Cmd {
 	return func() tea.Msg {
 		return msgs.SignUpAttemptMsg{
-			Username: username,
-			Password: password,
+			Username:  username,
+			Passwords: passwords,
 		}
 	}
 }

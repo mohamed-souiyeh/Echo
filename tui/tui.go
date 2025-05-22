@@ -54,7 +54,7 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 		return m, tea.Batch(cmds...)
 	case messages.SignUpAttemptMsg:
-		cmd := m.signUp(msg.Username, msg.Password)
+		cmd := m.signUp(msg.Username, msg.Passwords)
 		return m, cmd
 	case messages.SignInAttemptMsg:
 		cmd := m.signIn(msg.Username, msg.Password)
@@ -79,6 +79,7 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, cmd
 	case messages.LogoutMsg:
+		m.Routes[m.activeRoute], cmd = m.Routes[m.activeRoute].Update(msg)
 		m.isAuthenticated = false
 		m.activeRoute = Auth
 		keymaps.ChatKeyMaps.Deactivate()
@@ -100,7 +101,7 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m RootModel) signUp(username string, password string) tea.Cmd {
+func (m RootModel) signUp(username string, passwords []string) tea.Cmd {
 	return func() tea.Msg {
 
 		if len(username) < 1 {
@@ -109,14 +110,20 @@ func (m RootModel) signUp(username string, password string) tea.Cmd {
 				DebugReason: "username too short",
 			}
 		}
-		if len(password) < 6 {
+		if passwords[0] != passwords[1] {
 			return messages.AuthFailedMsg{
-				Reason:      "Size does matter in passwords, it need to be at least 13 characters long",
+				Reason:      "Passwords dont match, use your finges properly",
 				DebugReason: "password too short",
 			}
 		}
+		if len(passwords[0]) < 6 {
+			return messages.AuthFailedMsg{
+				Reason:      "Size does matter in passwords, it need to be at least 13 characters long",
+				DebugReason: "passwords dont match",
+			}
+		}
 
-		return m.userService.SignUp(username, password)
+		return m.userService.SignUp(username, passwords[0])
 	}
 }
 
@@ -141,5 +148,5 @@ func (m RootModel) View() string {
 		fmt.Println("current view:", "'", m.Routes[m.activeRoute].View(), "'")
 		fmt.Println("\nactive route: ", m.activeRoute)
 	})
-	return m.Routes[m.activeRoute].View() + fmt.Sprint("\nactive route: ", m.activeRoute)
+	return m.Routes[m.activeRoute].View()
 }
