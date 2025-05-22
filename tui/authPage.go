@@ -18,9 +18,11 @@ type AuthModel struct {
 	help      help.Model
 }
 
-func InitialAuthModel() AuthModel {
+func InitialAuthModel(win Window) AuthModel {
 
 	m := AuthModel{
+		width:     win.Width,
+		height:    win.Height,
 		authForum: comps.InitialAuthForumModel(),
 		help:      help.New(),
 	}

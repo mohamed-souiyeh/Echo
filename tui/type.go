@@ -2,9 +2,18 @@ package tui
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 )
+
+// chat types
+const msgTimeoutDuration = time.Millisecond * 5000
+
+type Window struct {
+	Width  int
+	Height int
+}
 
 type Renderer = lipgloss.Renderer
 

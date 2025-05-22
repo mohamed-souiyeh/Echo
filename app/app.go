@@ -161,7 +161,14 @@ func (a *App) echoMiddleware() wish.Middleware {
 	teaHandler := func(s ssh.Session) *tea.Program {
 		styles.ClientRenderer = bubbletea.MakeRenderer(s)
 
-		m := tui.InitialRootModel(repo.NewPostgresUserRepository(a.db))
+		pty, _, _ := s.Pty()
+
+		win := tui.Window{
+			Width: pty.Window.Width,
+			Height: pty.Window.Height,
+		}
+
+		m := tui.InitialRootModel(repo.NewPostgresUserRepository(a.db), a.CentralHubReqChan, win)
 
 		return tea.NewProgram(m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}
