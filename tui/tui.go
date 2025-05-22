@@ -5,6 +5,7 @@ import (
 	"echo/services"
 	"echo/tui/keymaps"
 	"echo/tui/messages"
+	"echo/workers"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -20,11 +21,11 @@ type RootModel struct {
 	quiting         bool
 }
 
-func InitialRootModel(userRepo db.UserRepository) RootModel {
+func InitialRootModel(userRepo db.UserRepository, hubReqChan chan workers.ClientHubReq, win Window) RootModel {
 	return RootModel{
 		activeRoute:     Auth,
 		currentMode:     Nav,
-		Routes:          []tea.Model{InitialAuthModel(), InitChatModel()},
+		Routes:          []tea.Model{InitialAuthModel(win), InitChatModel(hubReqChan, win)},
 		isAuthenticated: false,
 		userService:     services.NewUserService(userRepo),
 		quiting:         false,

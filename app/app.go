@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"echo/tui"
 	"echo/tui/styles"
+	"echo/workers"
 	"errors"
 	"fmt"
 	"net"
@@ -36,10 +37,11 @@ const (
 type App struct {
 	*ssh.Server
 	db *sql.DB
-	// CentralHubReqChan chan clientHubReq
-	// RoomHubNotifChan chan roomHubNotif
 
-	// ClientRoomNotifChan chan clientRoomNotif
+	ClientsStatus     map[int32]clientStatus
+	CentralHubReqChan chan workers.ClientHubReq
+
+	ComHub *workers.ComunicationHub
 }
 
 func NewApp() *App {
@@ -64,7 +66,20 @@ func NewApp() *App {
 	}
 
 	app.Server = s
+
+	app.ClientsStatus = make(map[int32]clientStatus)
+
+	app.CentralHubReqChan = make(chan workers.ClientHubReq, 4096)
+
+	app.ComHub = workers.NewComunicationHub(app.CentralHubReqChan)
+
 	return app
+}
+
+// TODO: the context here need to be handeled in a better way, meaning that the context need to be actually linked with the server and used how i should be, a way for the go routine to know that the party is over and exit accordingly.
+func (a *App) LaunchWorkers() {
+	ctx := context.Background()
+	go a.ComHub.Run(ctx)
 }
 
 func (a *App) dbSetup() {
@@ -108,8 +123,8 @@ func (a *App) dbSetup() {
 
 	echoDB.RunMigration(db)
 
-	userRepo := repo.NewPostgresUserRepository(db) // Placeholder for now
-	echoDB.RunUserSeed(context.Background(), userRepo) // Seeding will also need review
+	userRepo := repo.NewPostgresUserRepository(db)
+	echoDB.RunUserSeed(context.Background(), userRepo)
 
 	a.db = db
 }

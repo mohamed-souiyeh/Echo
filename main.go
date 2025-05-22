@@ -17,5 +17,7 @@ func main() {
 
 	a := app.NewApp()
 
+	a.LaunchWorkers()
+
 	a.Start()
 }
